@@ -4,7 +4,7 @@ import queue
 
 
 class Graph:
-    def __init__(self, vertices=None, edges=None, matrix=None, directed=False, weighted=None):
+    def __init__(self, graph=None, vertices=None, edges=None, matrix=None, directed=False, weighted=None):
         self.adj_list = {}
         self.adj_matrix = []
         self.num_vertices = 0
@@ -12,23 +12,36 @@ class Graph:
         self.vertices = {}
         self.directed = directed
         self.weighted = weighted
+        self.agentSet = []
+        self.objectSet = []
+        self.numb_agent = 0
+        self.numb_object = 0
+        self.sink = None
+        self.source = None
 
-        if edges is not None and matrix is None:
-            if len(edges[0]) == 2:
-                self.weighted = False
-            else:
-                self.weighted = True
+        if graph is None:
+            if edges is not None and matrix is None:
+                if len(edges[0]) == 2:
+                    self.weighted = False
+                else:
+                    self.weighted = True
 
-            if vertices is None:
-                self.add_edges(edges)
-            else:
-                self.add_vertices(vertices)
-                self.add_edges(edges)
+                if vertices is None:
+                    self.add_edges(edges)
+                else:
+                    self.add_vertices(vertices)
+                    self.add_edges(edges)
 
-        elif vertices is None and edges is None and matrix is not None:
-            self.adj_matrix = np.array(matrix)
-            self.matrix_to_adj()
+            elif vertices is None and edges is None and matrix is not None:
+                self.adj_matrix = np.array(matrix)
+                self.matrix_to_adj()
 
+        else:
+            self.adj_list = graph
+            vertices = list(self.adj_list.keys())
+            self.add_vertices(vertices)
+
+    # add edges to the graph
     def add_edges(self, edges):
         for edge in edges:
             if len(edge) == 2:
@@ -37,6 +50,7 @@ class Graph:
                 self.add_edge(edge[0], edge[1], edge[2])
         self.adj_to_matrix()
 
+    # add vertices to the list
     def add_vertices(self, vertices_list):
         for node in vertices_list:
             if node not in self.vertices:
@@ -44,25 +58,31 @@ class Graph:
                 self.num_vertices += 1
                 self.adj_list[node] = {}
 
+    # get the vertex with its connections
     def get_vertex(self, node):
         if node in self.adj_list:
             return self.adj_list[node]
         else:
             print("Not Found")
 
-    def add_edge(self, node1, node2, weight=0):
-        if node1 not in self.vertices:
-            self.vertices[node1] = 1
-            self.num_vertices += 1
-            self.adj_list[node1] = {}
-        if node2 not in self.vertices:
-            self.vertices[node2] = 1
-            self.num_vertices += 1
-            self.adj_list[node2] = {}
+    # add a single edge to the graph
+    def add_edge(self, node1, node2, weight=0, graph=None):
+        if graph is None:
+            if node1 not in self.vertices:
+                self.vertices[node1] = 1
+                self.num_vertices += 1
+                self.adj_list[node1] = {}
+            if node2 not in self.vertices:
+                self.vertices[node2] = 1
+                self.num_vertices += 1
+                self.adj_list[node2] = {}
 
-        self.adj_list[node1][node2] = weight
-        if not self.directed:
-            self.adj_list[node2][node1] = weight
+            self.adj_list[node1][node2] = weight
+            if not self.directed:
+                self.adj_list[node2][node1] = weight
+        else:
+            graph[node1][node2] = weight
+            return graph
 
     def get_vertices(self):
         return list(self.vertices.keys())
@@ -103,6 +123,8 @@ class Graph:
             color = {}
             source = list(self.adj_list.keys())[0]
             color[source] = 1
+            self.agentSet.append(source)
+            self.numb_agent += 1
             Q = queue.Queue()
             Q.put(source)
             while not (Q.empty()):
@@ -111,13 +133,26 @@ class Graph:
                     if node not in color:
                         if color[u] == 1:
                             color[node] = 0
+                            self.objectSet.append(node)
+                            self.numb_object += 1
                         else:
+
                             color[node] = 1
+                            self.agentSet.append(node)
+                            self.numb_agent += 1
                         Q.put(node)
                     else:
                         if color[node] == color[u]:
-                            return False
-            return True
+                            self.agentSet = []
+                            self.objectSet = []
+                            self.numb_agent = 0
+                            self.numb_object = 0
+                            self.isBipartite = False
+                            break
+            self.isBipartite = True
+
+    def check_sink_source(self, graph):
+        pass
 
 
 if __name__ == '__main__':

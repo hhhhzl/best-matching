@@ -1,6 +1,9 @@
+import time
+
 import simple_graph_operations as sg
-from Algorithms.graph_algorithms import AssignmentProblem
+from Algorithms.permutatiion_FF.solver import PFF_SOLVER
 import pprint
+from tools.read_graph_tools import readGraph
 
 
 def main(args=[]):
@@ -13,29 +16,20 @@ def main(args=[]):
         return
     graph_file = args[0]
     out_file = args[1]
-    G = sg.readGraph(graph_file)  # Read the graph from disk
-    s = 0
-    t = 7 # Read the source from disk
-    graph = AssignmentProblem(G)
-    pprint.pprint(G)
-    result = graph.Fold_fulkerson(s, t)
 
+    G = readGraph(graph_file, True)  # Read the graph from disk
+    s = 0
+    t = 7  # Read the source from disk
+    G.check_bipartite()
+    graph = PFF_SOLVER(G.adj_list, True)
+    result = graph.Fold_fulkerson(s, t)
     final_graph = graph.graph
-    # analysis = final_graph['adj'][10000]
-    # print(analysis)
-    # list = []
-    # for key in analysis:
-    #     list.append(analysis[key])
-    # list = np.array(list)
-    # print(np.mean(list))
-    # print(np.std(list))
-    ##--------------------------------------------------------------------------------------##
-    # hole_found, hole_length, hole_list = shortestHole(G, s)  # Find the shortest hole!
-    # writeOutput(out_file, hole_found, hole_length, hole_list)  # Write the output
     return result, final_graph
 
 
 if __name__ == "__main__":
+    start = time.time()
     code_result, graph = main(['test_data', 'out'])
     print(code_result)
-    pprint.pprint(graph['adj'])
+    pprint.pprint(graph)
+    print(time.time() - start)
