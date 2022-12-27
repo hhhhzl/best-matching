@@ -32,7 +32,7 @@ class Bipartite(Graph):
         if self.sink is not None and self.source is not None:
             if self.method == "PFF":
                 graph = PFF_SOLVER(self.graph, True)
-                graph.permutation(graph.graph, ['1', '2', '3'], ['4', '5', '6'], '0', '7')
+                # graph.permutation(graph.graph, ['1', '2', '3'], ['4', '5', '6'], '0', '7')
                 graph.Fold_fulkerson(self.source, self.sink)
                 self.result = graph.graph
             else:

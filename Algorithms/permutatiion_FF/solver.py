@@ -18,7 +18,6 @@ class PFF_SOLVER(Graph):
         self.count = 0
 
     def permutation(self, graph, agentSet, objectSet, source=None, sink=None):
-        c_graph = graph
         objectOrder = {}
         agentOrder = {}
         for agent in agentSet:
