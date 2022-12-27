@@ -4,6 +4,7 @@ import heapq
 import numpy as np
 from AssignNet.general_tools import Graph
 import queue
+from tools import Sort_Tuple
 
 
 class PFF_SOLVER(Graph):
@@ -16,14 +17,38 @@ class PFF_SOLVER(Graph):
         self.parents = {}
         self.count = 0
 
-    def permutation(self):
-        pass
+    def permutation(self, graph, agentSet, objectSet, source=None, sink=None):
+        c_graph = graph
+        objectOrder = {}
+        agentOrder = {}
+        for agent in agentSet:
+            agentOrder[agent] = len(list(graph[agent].keys()))
+            for object in graph[agent].keys():
+                if object != source:
+                    if object not in objectOrder:
+                        objectOrder[object] = 1
+                    else:
+                        objectOrder[object] += 1
+        for agent in agentSet:
+            for object in graph[agent].keys():
+                if object == source:
+                    graph[agent][object] = (object, graph[agent][object], 0)
+                else:
+                    graph[agent][object] = (object, graph[agent][object], objectOrder[object])
+            new_dic = graph[agent]
+            new_list = Sort_Tuple(list(new_dic.values()))
+            new_dic = {}
+            for node in new_list:
+                new_dic[node[0]] = node[1]
+            graph[agent] = new_dic
+        self.graph = graph
+        return graph
 
     def BFS(self, s, t):
         distances = {}
         finalized = {}
         self.parents = {}
-        layers = [[] for d in range(3)]
+        layers = [[] for d in range(6)]
         Q = queue.Queue()
         distances[s] = 0
         self.parents[s] = None
