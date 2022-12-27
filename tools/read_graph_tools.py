@@ -25,14 +25,8 @@ def readGraph(input_file, directed):
     The data structure it returns is a dictionary with keys "n", "m", "adj" (strings). The values for "n" and "m" are the number of nodes and edges in the graph (respectively). Edges are counted as in a directed graph (so each undirected edge counts twice). The value for "adj" is a dictionary-of-dictionaries adjacency structure.
     '''
     with open(input_file, 'r') as f:
-        raw = [[float(x) for x in s.split(', ')] for s in f.read().splitlines()]
-    G = Graph(directed=directed)
-    for edge in raw:
-        if len(edge) == 2:
-            G.add_edge(int(edge[0]), int(edge[1]))
-        else:
-            G.add_edge(int(edge[0]), int(edge[1]), weight=int(edge[2]))
-    return G
+        raw = [[int(x) for x in s.split(', ')] for s in f.read().splitlines()]
+    return raw
 
 
 def writeGraph(G, output_file):
