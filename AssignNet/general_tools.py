@@ -1,10 +1,11 @@
 import pprint
 import numpy as np
 import queue
+from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 
 
 class Graph:
-    def __init__(self, graph=None, vertices=None, edges=None, matrix=None, directed=False, weighted=None):
+    def __init__(self):
         pass
 
     # add edges to the graph
@@ -36,7 +37,7 @@ class Graph:
             if node not in vertices:
                 vertices[node] = 1
                 graph[node] = {}
-        return num_vertices,  vertices, graph
+        return num_vertices, vertices, graph
 
     # get the vertex with its connections
     def get_vertex(self, node, graph):
@@ -88,48 +89,90 @@ class Graph:
                     graph = self.add_edge(str(i + 1), str(j + 1), matrix[i][j], graph)
         return graph
 
-    def check_bipartite(self, graph):
+    def check_bipartite(self, graph, sink=None, Source=None):
         if graph != {}:
-            color = {}
-            source = list(graph.keys())[0]
-            color[source] = 1
-            agentSet, objectSet = [], []
-            numb_agent, numb_object = 0, 0
-            agentSet.append(source)
-            numb_agent += 1
-            Q = queue.Queue()
-            Q.put(source)
-            while not (Q.empty()):
-                u = Q.get()
-                for node in graph[u].keys():
-                    if node not in color:
-                        if color[u] == 1:
-                            color[node] = 0
-                            objectSet.append(node)
-                            numb_object += 1
+            if sink is None and Source is None:
+                color = {}
+                source = list(graph.keys())[0]
+                color[source] = 1
+                agentSet, objectSet = [], []
+                numb_agent, numb_object = 0, 0
+                agentSet.append(source)
+                numb_agent += 1
+                Q = queue.Queue()
+                Q.put(source)
+                while not (Q.empty()):
+                    u = Q.get()
+                    for node in graph[u].keys():
+                        if node not in color:
+                            if color[u] == 1:
+                                color[node] = 0
+                                objectSet.append(node)
+                                numb_object += 1
+                            else:
+
+                                color[node] = 1
+                                agentSet.append(node)
+                                numb_agent += 1
+                            Q.put(node)
                         else:
+                            if color[node] == color[u]:
+                                return False, 0, [], 0, []
+                return True, numb_agent, agentSet, numb_object, objectSet
+            elif sink is not None and Source is not None:
+                color = {}
+                source = list(graph.keys())[0]
+                color[source] = 1
+                agentSet, objectSet = [], []
+                numb_agent, numb_object = 0, 0
+                numb_agent += 0
+                Q = queue.Queue()
+                Q.put(source)
+                while not (Q.empty()):
+                    u = Q.get()
+                    for node in graph[u].keys():
+                        if node != sink and node != Source:
+                            if node not in color:
+                                if color[u] == 1:
+                                    color[node] = 0
+                                    agentSet.append(node)
+                                    numb_object += 1
+                                else:
 
-                            color[node] = 1
-                            agentSet.append(node)
-                            numb_agent += 1
-                        Q.put(node)
-                    else:
-                        if color[node] == color[u]:
-                            return False, 0, [], 0, []
-            return True, numb_agent, agentSet, numb_object, objectSet
+                                    color[node] = 1
+                                    objectSet.append(node)
+                                    numb_agent += 1
+                                Q.put(node)
+                            else:
+                                if color[node] == color[u]:
+                                    return False, 0, [], 0, []
+                return True, numb_agent, agentSet, numb_object, objectSet
 
-    def check_sink_source(self, graph):
-        pass
+    def add_sink_source_layer(self, graph, agentSet):
+        source_dic = {}
+        sink_dic = {}
+        new = {}
+        for node in agentSet:
+            source_dic[node] = 1
+        new[DEFAULT_SOURCE] = source_dic
+        sink_dic[DEFAULT_SINK] = {}
+        res = {**new, **graph, **sink_dic}
+        return res
+
+    def allow_multi_assign(self, graph, objectSet, sink=None):
+        if sink:
+            number = len(objectSet) + 1
+            for node in objectSet:
+                graph[node][sink] = number
+            return graph
+
+    def directed_check_agentSet(self, graph):
+        agent = []
+        for node in graph.keys():
+            if graph[node] != {}:
+                agent.append(node)
+        return agent
 
 
 if __name__ == '__main__':
-    m = [
-        [0, 1, 1, 1],
-        [1, 0, 1, 0],
-        [1, 1, 0, 1],
-        [1, 0, 1, 0],
-    ]
-    v = ["a", 'b', 'c', 'd']
-    E = [
-        ('a', 'b'), ('b', 'c'), ('c', 'd'), ('a', 'd'), ('a', 'c')
-    ]
+    pass

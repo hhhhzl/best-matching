@@ -8,10 +8,10 @@ from tools import Sort_Tuple
 
 
 class PFF_SOLVER(Graph):
-    def __init__(self, graph, directed):
+    def __init__(self, graph, directed, n):
         super().__init__()
         # residual graph
-
+        self.n = n
         self.directed = directed
         self.graph = graph
         self.parents = {}
@@ -47,7 +47,7 @@ class PFF_SOLVER(Graph):
         distances = {}
         finalized = {}
         self.parents = {}
-        layers = [[] for d in range(6)]
+        layers = [[] for d in range(self.n)]
         Q = queue.Queue()
         distances[s] = 0
         self.parents[s] = None

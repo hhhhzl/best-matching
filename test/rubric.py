@@ -22,7 +22,7 @@ def main(args=[]):
     # G, weight = ope.add_edges(G, {})
     s = '0'
     t = '7'  # Read the source from disk
-    graph = Bipartite(edges_list=G, source=s, sink=t)
+    graph = Bipartite(edges_list=G, directed=True)
     graph.execute()
     result = graph.result
     return result

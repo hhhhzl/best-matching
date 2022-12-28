@@ -1,0 +1,2 @@
+DEFAULT_SOURCE = '#!%SOURCE%!#'
+DEFAULT_SINK = '#!%SINK%!#'
