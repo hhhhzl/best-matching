@@ -19,10 +19,10 @@ def main(args=[]):
 
     G = readGraph(graph_file, True)  # Read the graph from disk
     ope = Graph()
-    # G, weight = ope.add_edges(G, {})
+    g, weight = ope.add_edges(G, {})
     s = '0'
     t = '7'  # Read the source from disk
-    graph = Bipartite(edges_list=G, directed=True)
+    graph = Bipartite(edges_list=G, directed=True, permutation=True, allow_multitask=False)
     graph.execute()
     result = graph.result
     return result
