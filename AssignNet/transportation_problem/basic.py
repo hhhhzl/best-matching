@@ -2,6 +2,12 @@ import pprint
 from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 from AssignNet.general_tools import Graph
 from Algorithms.permutatiion_FF.solver import PFF_SOLVER
+import copy
+import numpy as np
+from AssignNet.bipartite_matching.basic import Bipartite
+import concurrent.futures
+import time
+from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 
 
 class Trans_Problem(Graph):
@@ -25,6 +31,7 @@ class Trans_Problem(Graph):
         self.numb_agent = None
         self.numb_object = None
         self.permutation = permutation
+        self.layering_graph = None
 
     def execute(self):
         if self.graph and self.matrix is None and self.edges_list is None:
@@ -79,25 +86,104 @@ class Trans_Problem(Graph):
                     self.result = 'Graph is not Bipartite.'
 
     def run_edges(self):
-        if len(self.edges_list[0]) == 2:
-            self.edges_list = [node + [1] for node in self.edges_list]
-            self.graph, self.weighted = self.add_edges(edges=self.edges_list, graph={})
-            self.run_graph()
-        else:
-            self.graph, self.weighted = self.add_edges(edges=self.edges_list, graph={})
-            self.run_graph()
+        self.graph, self.weighted = self.add_edges(edges=self.edges_list, graph={})
+        self.run_graph()
 
     def run_matrix(self):
         pass
 
-    def layering(self):
-        pass
+    def layering(self, graph, source, agent_set):
+        if agent_set is None:
+            valid, self.numb_agent, self.agent_set, self.numb_object, self.object_set = self.check_bipartite(
+                graph=graph, sink=self.sink, Source=self.source)
+        agentSet_connects = self.check_set_numbers(graph=graph, agentSet=agent_set)
+        agentSet_matrix = {}
+        copy_graph = copy.deepcopy(graph)
+        for node in agentSet_connects.keys():
+            agentSet_matrix[node] = []
 
-    def expanding(self):
-        pass
+        while copy_graph[source] != {}:
+            source_set = copy_graph[source]
+            node_list = list(source_set.keys())
+            for node in node_list:
+                if source_set[node] <= agentSet_connects[node]:
+                    agentSet_matrix[node].append(source_set[node])
+                    del copy_graph[source][node]
+                    del copy_graph[node]
+                elif source_set[node] > agentSet_connects[node]:
+                    agentSet_matrix[node].append(agentSet_connects[node])
+                    copy_graph[source][node] -= agentSet_connects[node]
+        agentSet_matrix, max_len = self.convert_layer_matrix(agentSet_matrix)
+        self.layering_graph = self.create_new_layers_graph(graph, source, agentSet_matrix, max_len)
 
-    def PPFFA(self):
-        pass
+    def expanding(self, layering_graph, source):
+        for node in layering_graph.keys():
+            source_set = list(layering_graph[node]['adj'][source].keys())
+            for each_agent in source_set:
+                if layering_graph[node]['adj'][source][each_agent] > 1:
+                    num = layering_graph[node]['adj'][source][each_agent]
+                    counter = num - 1
+                    while counter > 0:
+                        layering_graph[node]['adj'][source][each_agent + (num - counter) * 'e'] = 1
+                        layering_graph[node]['adj'][each_agent + (num - counter) * 'e'] = copy.deepcopy(
+                            layering_graph[node]['adj'][each_agent])
+                        counter -= 1
+                    layering_graph[node]['adj'][source][each_agent] = 1
+        return layering_graph
+
+    def PP_FFA(self, expanded_graph):
+        for node in expanded_graph.keys():
+            graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=True, allow_multitask=True,
+                              sink=self.sink,
+                              source=self.source)
+            graph.execute()
+            # pprint.pprint(graph.result)
+
+    def par_PP_FFA(self, expanded_graph):
+        graph = Bipartite(graph=expanded_graph, directed=True, permutation=True, allow_multitask=True,
+                          sink=self.sink,
+                          source=self.source)
+        graph.execute()
+        return graph.result
 
     def merge(self):
         pass
+
+    def create_new_layers_graph(self, graph, source, number_layer, max_len):
+        layer_graph = {}
+        pre = np.zeros(max_len)
+        pre_layer = '1'
+        for i in range(1, max_len + 1):
+            current = []
+            for node in number_layer.keys():
+                current.append(number_layer[node][i - 1])
+            current = np.array(current)
+            if np.array_equal(pre, current):
+                layer_graph[pre_layer]['number'] += 1
+            else:
+                layer_graph[str(i)] = {}
+                layer_graph[str(i)]['number'] = 1
+                layer_graph[str(i)]['adj'] = copy.deepcopy(graph)
+                for node in number_layer.keys():
+                    if number_layer[node][i - 1] != 0:
+                        layer_graph[str(i)]['adj'][source][node] = number_layer[node][i - 1]
+                    else:
+                        del layer_graph[str(i)]['adj'][source][node]
+                        del layer_graph[str(i)]['adj'][node]
+                pre_layer = str(i)
+            pre = current[:]
+        return layer_graph
+
+    def convert_layer_matrix(self, number_layer):
+        max_len = 0
+        for node in number_layer.keys():
+            if len(number_layer[node]) > max_len:
+                max_len = len(number_layer[node])
+        for node in number_layer.keys():
+            if len(number_layer[node]) < max_len:
+                number_layer[node] += [0] * (max_len - len(number_layer[node]))
+        return number_layer, max_len
+
+
+if __name__ == "__main__":
+    pass

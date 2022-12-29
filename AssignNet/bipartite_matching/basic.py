@@ -44,7 +44,7 @@ class Bipartite(Graph):
                 if self.method == "PFF":
                     graph = PFF_SOLVER(self.graph, True, self.numb_agent+self.numb_object)
                     if self.permutation:
-                        graph.permutation(graph.graph, self.agent_set, self.object_set, self.sink, self.source)
+                        graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set, sink=self.sink, source=self.source)
                     graph.Fold_fulkerson(self.source, self.sink)
                     self.result = graph.graph
                 else:
@@ -69,7 +69,7 @@ class Bipartite(Graph):
                     if self.method == "PFF":
                         graph = PFF_SOLVER(self.graph, True, self.numb_agent+self.numb_object)
                         if self.permutation:
-                            graph.permutation(graph.graph, self.agent_set, self.object_set, self.sink, self.source)
+                            graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set, sink=self.sink, source=self.source)
                         graph.Fold_fulkerson(self.source, self.sink)
                         self.result = graph.graph
                     else:

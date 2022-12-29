@@ -5,6 +5,7 @@ import numpy as np
 from AssignNet.general_tools import Graph
 import queue
 from tools import Sort_Tuple
+import copy
 
 
 class PFF_SOLVER(Graph):
@@ -28,6 +29,7 @@ class PFF_SOLVER(Graph):
                         objectOrder[object] = 1
                     else:
                         objectOrder[object] += 1
+
         for agent in agentSet:
             for object in graph[agent].keys():
                 if object == source:
@@ -59,6 +61,7 @@ class PFF_SOLVER(Graph):
                 finalized[u] = True
                 layers[distances[u]].append(u)
                 for v in self.graph[u]:
+
                     if self.graph[u][v] > 0 and v not in distances:
                         if v == t:
                             distances[v] = distances[u] + 1
@@ -96,7 +99,7 @@ class PFF_SOLVER(Graph):
                 self.graph[u][v] -= path_flow
 
                 if u not in self.graph[v]:
-                    self.graph = self.add_edge(v, u, 0, self.graph)
+                    self.graph = self.add_edge(node1=v, node2=u, weight=0, graph=self.graph)
                     self.graph[v][u] += path_flow
                     v = self.parents[v]
                 else:

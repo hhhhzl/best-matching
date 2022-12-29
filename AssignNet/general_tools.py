@@ -173,6 +173,12 @@ class Graph:
                 agent.append(node)
         return agent
 
+    def check_set_numbers(self, graph, agentSet):
+        agentOrder = {}
+        for agent in agentSet:
+            agentOrder[agent] = len(list(graph[agent].keys()))
+        return agentOrder
+
 
 if __name__ == '__main__':
     pass
