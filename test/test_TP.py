@@ -6,42 +6,103 @@ import pprint
 from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 import copy
 from joblib import Parallel, delayed
+import multiprocessing
+from multiprocessing import Pool, cpu_count
+from multiprocessing import Queue
+from multiprocessing import Lock
+from multiprocessing import Pipe
+import logging
+from Algorithms.permutatiion_FF.solver import PFF_SOLVER
+from concurrent.futures import ProcessPoolExecutor
+import asyncio
 
-if __name__ == "__main__":
-    generated_graph, agent_set = auto_generate_graph(2000, 2000)
-    generated_graph_copy = copy.deepcopy(generated_graph)
-    # # 全部展开
-    # graph = {'1': {}}
-    # graph['1']['adj'] = generated_graph
-    # run = Trans_Problem()
-    # G = run.expanding(layering_graph=graph, source=DEFAULT_SOURCE)
-    # start = time.time()
-    # run.PP_FFA(G)
-    # print('全部展开时间：', time.time() - start)
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-    # 分层展开，no par
+
+def data_generate(number, max):
+    generated_graph, agent_set, object_set, m = auto_generate_graph(number, number, max)
+    return generated_graph, agent_set, object_set, m
+
+
+def test_all_expand(generated_graph, number, m):
+    operate_graph = copy.deepcopy(generated_graph)
+    graph = copy.deepcopy({'1': {}})
+    graph['1']['adj'] = operate_graph
     start = time.time()
-    new = Trans_Problem()
-    new.layering(generated_graph_copy, DEFAULT_SOURCE, agent_set)
+    run = Trans_Problem()
+    G = run.expanding(layering_graph=graph, source=DEFAULT_SOURCE)
+    logging.info(f'层数：- {len(list(G.keys()))}层')
+    run.PP_FFA(copy.deepcopy(G))
+    logging.info(f'{number} * {number}- {m} - 全部展开时间运算：{"{:.3f}".format(time.time() - start)}s')
+
+
+def test_layering_single_thread(generated_graph, agent_set, object_set, number, m):
+    operate_graph = copy.deepcopy(generated_graph)
+    g = PFF_SOLVER()
+    start = time.time()
+    operate_graph1 = g.permutation(graph=operate_graph, agentSet=agent_set, objectSet=object_set, source=DEFAULT_SOURCE)
+    logging.info(f'{number} * {number} - {m} - 排列运算：{"{:.3f}".format(time.time() - start)}s')
+    new = Trans_Problem(sink=DEFAULT_SINK, source=DEFAULT_SOURCE)
+    new.layering(operate_graph1, DEFAULT_SOURCE, agent_set)
+    logging.info(f'{number} * {number} - {m} - 分层运算：{"{:.3f}".format(time.time() - start)}s')
     graph1 = new.layering_graph
     G1 = new.expanding(layering_graph=graph1, source=DEFAULT_SOURCE)
-    G2 = copy.deepcopy(G1)
-    print('分层展开无进程运算开始：', time.time() - start)
-    start = time.time()
-    print(list(G1.keys()))
+    logging.info(f'层数：- {len(list(G1.keys()))}层')
+    logging.info(f'{number} * {number} - {m} - 展开运算：{"{:.3f}".format(time.time() - start)}s')
     new.PP_FFA(G1)
-    print('分层展开无进程：', time.time() - start)
+    logging.info(f'{number} * {number} - {m} - 分层展开时间运算：{"{:.3f}".format(time.time() - start)}s')
 
 
-    # par
+def test_layering_multi_thread(generated_graph, agent_set, object_set, number, m):
+    operate_graph = copy.deepcopy(generated_graph)
+    g = PFF_SOLVER()
+    start = time.time()
+    operate_graph1 = g.permutation(graph=operate_graph, agentSet=agent_set, objectSet=object_set, source=DEFAULT_SOURCE)
+    logging.info(f'{number} * {number} - {m} - 排列运算：{"{:.3f}".format(time.time() - start)}s')
 
-    # with concurrent.futures.ProcessPoolExecutor() as executor:
-    #     nodes = list(G2.keys())
-    #     results = [executor.submit(new.par_PP_FFA, G2[node]['adj']) for node in nodes]
-    #     start1 = time.time()
-    #     for f in concurrent.futures.as_completed(results):
-    #         # pprint.pprint(f.result())
-    #         pass
-    # # nodes = list(G2.keys())
-    # # Parallel(n_jobs=2)(delayed(new.par_PP_FFA)(G2[node]['adj']) for node in nodes)
-    # print('分层展开使用进程：', time.time() - start1)
+    new = Trans_Problem()
+    new.layering(operate_graph1, DEFAULT_SOURCE, agent_set)
+    logging.info(f'{number} * {number} - {m}- 分层运算：{"{:.3f}".format(time.time() - start)}s')
+    graph1 = new.layering_graph
+    G1 = new.expanding(layering_graph=graph1, source=DEFAULT_SOURCE)
+    logging.info(f'{number} * {number} - {m} - 展开运算：{"{:.3f}".format(time.time() - start)}s')
+    #
+    graphs = [copy.deepcopy(G1[node]['adj']) for node in list(G1.keys())]
+    logging.info(f'层数：- {len(graphs)}层')
+    par(new, graphs)
+    logging.info(f'{number} * {number}-分层展开时间多进程运算：{"{:.3f}".format(time.time() - start)}s')
+
+
+def par(Class, graphs):
+    # loop = asyncio.get_running_loop()
+    # lstFutures = []
+    # # Create an executor with a maximum of eight workers
+    # objExecutor = ProcessPoolExecutor(max_workers=8)
+    # # Create eight processes using the executor
+    # for _ in graphs:
+    #     lstFutures.append(loop.run_in_executor(objExecutor, Class.par_PP_FFA, _))
+    # # Wait for all processes to complete
+    # await asyncio.wait(lstFutures)
+    pool = Pool(processes=8)
+    result = []
+    for graph in graphs:
+        result.append(pool.apply_async(func=Class.par_PP_FFA, args=(graph, )))
+    pool.close()
+    pool.join()
+    ans = [res.get() for res in result]
+
+
+def main():
+    for (item, number) in enumerate([100]):
+        logging.info(f'TP测试{item + 1}开始')
+        generated_graph, agent_set, object_set, m = data_generate(number, 50)
+        # test_all_expand(generated_graph, number, m)
+        # test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
+        test_layering_multi_thread(generated_graph, agent_set, object_set,  number, m)
+        logging.info(f'TP测试{item + 1}结束')
+
+
+if __name__ == "__main__":
+    logging.info(f'TP测试开始')
+    main()
+    logging.info(f'TP测试结束')

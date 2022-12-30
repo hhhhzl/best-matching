@@ -4,11 +4,11 @@ from AssignNet.general_tools import Graph
 from Algorithms.permutatiion_FF.solver import PFF_SOLVER
 import copy
 import numpy as np
-from AssignNet.bipartite_matching.basic import Bipartite
+from AssignNet.bipartite_matching.basic import Bipartite, test
 import concurrent.futures
 import time
 from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
-
+import string
 
 class Trans_Problem(Graph):
     def __init__(self, graph=None, matrix=None, edges_list=None, directed=None, sink=None, source=None,
@@ -32,6 +32,8 @@ class Trans_Problem(Graph):
         self.numb_object = None
         self.permutation = permutation
         self.layering_graph = None
+        self.string_dic = {}
+        self.used_dic = {}
 
     def execute(self):
         if self.graph and self.matrix is None and self.edges_list is None:
@@ -117,6 +119,7 @@ class Trans_Problem(Graph):
         self.layering_graph = self.create_new_layers_graph(graph, source, agentSet_matrix, max_len)
 
     def expanding(self, layering_graph, source):
+        self.init_string_dic()
         for node in layering_graph.keys():
             source_set = list(layering_graph[node]['adj'][source].keys())
             for each_agent in source_set:
@@ -124,8 +127,9 @@ class Trans_Problem(Graph):
                     num = layering_graph[node]['adj'][source][each_agent]
                     counter = num - 1
                     while counter > 0:
-                        layering_graph[node]['adj'][source][each_agent + (num - counter) * 'e'] = 1
-                        layering_graph[node]['adj'][each_agent + (num - counter) * 'e'] = copy.deepcopy(
+                        s = self.check_which_to_use()
+                        layering_graph[node]['adj'][source][each_agent + s] = 1
+                        layering_graph[node]['adj'][each_agent + s] = copy.deepcopy(
                             layering_graph[node]['adj'][each_agent])
                         counter -= 1
                     layering_graph[node]['adj'][source][each_agent] = 1
@@ -133,17 +137,21 @@ class Trans_Problem(Graph):
 
     def PP_FFA(self, expanded_graph):
         for node in expanded_graph.keys():
-            graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=True, allow_multitask=True,
-                              sink=self.sink,
-                              source=self.source)
+            graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False, allow_multitask=True,
+                               sink=self.sink,
+                               source=self.source)
             graph.execute()
+            # graph = test()
+            # graph.test_fun()
             # pprint.pprint(graph.result)
 
     def par_PP_FFA(self, expanded_graph):
-        graph = Bipartite(graph=expanded_graph, directed=True, permutation=True, allow_multitask=True,
+        graph = Bipartite(graph=expanded_graph, directed=True, permutation=False, allow_multitask=True,
                           sink=self.sink,
                           source=self.source)
         graph.execute()
+        # graph = test()
+        # graph.test_fun()
         return graph.result
 
     def merge(self):
@@ -183,6 +191,38 @@ class Trans_Problem(Graph):
             if len(number_layer[node]) < max_len:
                 number_layer[node] += [0] * (max_len - len(number_layer[node]))
         return number_layer, max_len
+
+    def init_string_dic(self):
+        s = string.printable
+        for i in range(len(s) - 1):
+            self.string_dic[s[i]] = s[i+1]
+        self.string_dic[s[-1]] = s[0]
+
+    def check_which_to_use(self):
+        l = string.printable[-1]
+        if self.used_dic == {}:
+            s = string.printable[0]
+            self.used_dic[s] = 1
+            return s
+        last_use = list(self.used_dic.keys())[-1]
+        counter = 0
+        for i in range(len(last_use)):
+            if last_use[i] == l:
+                counter += 1
+        if counter == len(last_use):
+            s = string.printable[0] * (len(last_use) + 1)
+            self.used_dic[s] = 1
+            return s
+        else:
+            index = len(last_use) - counter - 1
+            s = ''
+            for i in range(len(last_use)):
+                if i < index:
+                    s += last_use[i]
+                else:
+                    s += self.string_dic[last_use[i]]
+            self.used_dic[s] = 1
+            return s
 
 
 if __name__ == "__main__":

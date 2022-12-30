@@ -9,7 +9,7 @@ import copy
 
 
 class PFF_SOLVER(Graph):
-    def __init__(self, graph, directed, n):
+    def __init__(self, graph=None, directed=None, n=None):
         super().__init__()
         # residual graph
         self.n = n

@@ -11,24 +11,26 @@ def Sort_Tuple(tup):
     return tup
 
 
-def auto_generate_graph(agent, object):
+def auto_generate_graph(agent, object, max_unit):
+    m = 0
     graph = {DEFAULT_SOURCE: {}}
     agentSet = [str(i) for i in range(1, agent + 1)]
     objectSet = [str(i) for i in range(agent + 1, agent + object + 1)]
     for each_agent in agentSet:
-        # graph[DEFAULT_SOURCE][each_agent] = random.randint(1, 10)
-        graph[DEFAULT_SOURCE][each_agent] = 1
+        graph[DEFAULT_SOURCE][each_agent] = random.randint(1, max_unit)
+        # graph[DEFAULT_SOURCE][each_agent] = 1
         number_connect = random.randint(1, object)
         graph[each_agent] = {}
         while number_connect >= 0:
             x = random.randint(agent + 1, agent + object)
             graph[each_agent][str(x)] = 1
+            m += 1
             number_connect -= 1
     for each_object in objectSet:
         graph[each_object] = {}
         graph[each_object][DEFAULT_SINK] = 1
     graph[DEFAULT_SINK] = {}
-    return graph, agentSet
+    return graph, agentSet, objectSet, m
 
 
 if __name__ == "__main__":
