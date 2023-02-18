@@ -159,11 +159,11 @@ class Graph:
         res = {**new, **graph, **sink_dic}
         return res
 
-    def allow_multi_assign(self, graph, objectSet, sink=None):
+    def allow_multi_assign(self, graph, objectSet, agentSet, sink=None):
         if sink:
-            number = len(objectSet) + 1
+            number = len(agentSet) // len(objectSet) + 1
             for node in objectSet:
-                graph[node][sink] = number
+                graph[node][sink] = int(number)
             return graph
 
     def directed_check_agentSet(self, graph):

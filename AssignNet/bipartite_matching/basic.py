@@ -48,13 +48,13 @@ class Bipartite(Graph):
                 graph=self.graph, sink=self.sink, Source=self.source)
             if valid:
                 if self.allow_multi:
-                    self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink)
+                    self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink, agentSet=self.agent_set)
                 # add methods
                 if self.method == "PFF":
                     graph = PFF_SOLVER(self.graph, True, self.numb_agent+self.numb_object)
                     if self.permutation:
                         graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set, sink=self.sink, source=self.source)
-                    graph.Fold_fulkerson(self.source, self.sink)
+                    graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set)
                     self.result = graph.graph
                 else:
                     self.result = "Invalid Method."
@@ -74,12 +74,12 @@ class Bipartite(Graph):
                     graph=self.graph, sink=self.sink, Source=self.source)
                 if valid:
                     if self.allow_multi:
-                        self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink)
+                        self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink, agentSet=self.agent_set)
                     if self.method == "PFF":
                         graph = PFF_SOLVER(self.graph, True, self.numb_agent+self.numb_object)
                         if self.permutation:
                             graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set, sink=self.sink, source=self.source)
-                        graph.Fold_fulkerson(self.source, self.sink)
+                        graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set)
                         self.result = graph.graph
                     else:
                         self.result = "Invalid Method."

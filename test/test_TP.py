@@ -15,6 +15,7 @@ import logging
 from Algorithms.permutatiion_FF.solver import PFF_SOLVER
 from concurrent.futures import ProcessPoolExecutor
 import asyncio
+from functools import partial
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
@@ -70,7 +71,7 @@ def test_layering_multi_thread(generated_graph, agent_set, object_set, number, m
     graphs = [copy.deepcopy(G1[node]['adj']) for node in list(G1.keys())]
     logging.info(f'层数：- {len(graphs)}层')
     par(new, graphs)
-    logging.info(f'{number} * {number}-分层展开时间多进程运算：{"{:.3f}".format(time.time() - start)}s')
+    logging.info(f'{number} * {number} - 分层展开时间多进程运算：{"{:.3f}".format(time.time() - start)}s')
 
 
 def par(Class, graphs):
@@ -83,21 +84,31 @@ def par(Class, graphs):
     #     lstFutures.append(loop.run_in_executor(objExecutor, Class.par_PP_FFA, _))
     # # Wait for all processes to complete
     # await asyncio.wait(lstFutures)
-    pool = Pool(processes=8)
+    # n = len(graphs)
+    # result = []
+    # pool = Pool(processes=multiprocessing.cpu_count())
+    # for k in range(n):
+    #     p = partial(Class.par_PP_FFA, expanded_graph=graphs[k])
+    #     result_list = pool.map(p, range(n))
+    #     for result in result_list:
+    #         pass
+    # pool.close()
+    # pool.join()
+    n = len(graphs)
+    pool = Pool(processes=multiprocessing.cpu_count())
     result = []
-    for graph in graphs:
-        result.append(pool.apply_async(func=Class.par_PP_FFA, args=(graph, )))
+    for i in range(n):
+        result.append(pool.apply_async(func=Class.par_PP_FFA, args=(i, graphs[i], )))
     pool.close()
     pool.join()
     ans = [res.get() for res in result]
 
-
 def main():
-    for (item, number) in enumerate([100]):
+    for (item, number) in enumerate([10, 100, 200, 300]):
         logging.info(f'TP测试{item + 1}开始')
         generated_graph, agent_set, object_set, m = data_generate(number, 50)
         # test_all_expand(generated_graph, number, m)
-        # test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
+        test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
         test_layering_multi_thread(generated_graph, agent_set, object_set,  number, m)
         logging.info(f'TP测试{item + 1}结束')
 
@@ -106,3 +117,4 @@ if __name__ == "__main__":
     logging.info(f'TP测试开始')
     main()
     logging.info(f'TP测试结束')
+

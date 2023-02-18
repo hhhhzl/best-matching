@@ -34,5 +34,5 @@ def auto_generate_graph(agent, object, max_unit):
 
 
 if __name__ == "__main__":
-    graph = auto_generate_graph(10, 10)
-    pprint.pprint(graph)
+    gen = [('7',5), ('9',4), ('8',4)]
+    print(Sort_Tuple(gen))

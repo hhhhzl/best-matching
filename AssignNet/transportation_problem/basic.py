@@ -9,7 +9,8 @@ import concurrent.futures
 import time
 from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 import string
-
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 class Trans_Problem(Graph):
     def __init__(self, graph=None, matrix=None, edges_list=None, directed=None, sink=None, source=None,
                  allow_multitask=True, method='PFF', permutation=True):
@@ -136,22 +137,28 @@ class Trans_Problem(Graph):
         return layering_graph
 
     def PP_FFA(self, expanded_graph):
+        counter = 0
         for node in expanded_graph.keys():
+            start = time.time()
             graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False, allow_multitask=True,
                                sink=self.sink,
                                source=self.source)
             graph.execute()
+            logging.info(f"{counter} - {time.time() - start}")
+            counter += 1
             # graph = test()
             # graph.test_fun()
             # pprint.pprint(graph.result)
 
-    def par_PP_FFA(self, expanded_graph):
+    def par_PP_FFA(self, i, expanded_graph):
+        start = time.time()
         graph = Bipartite(graph=expanded_graph, directed=True, permutation=False, allow_multitask=True,
                           sink=self.sink,
                           source=self.source)
         graph.execute()
         # graph = test()
         # graph.test_fun()
+        logging.info(f"{i} - {time.time() - start}")
         return graph.result
 
     def merge(self):
