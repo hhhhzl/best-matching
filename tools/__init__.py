@@ -17,7 +17,7 @@ def auto_generate_graph(agent, object, max_unit):
     agentSet = [str(i) for i in range(1, agent + 1)]
     objectSet = [str(i) for i in range(agent + 1, agent + object + 1)]
     for each_agent in agentSet:
-        graph[DEFAULT_SOURCE][each_agent] = random.randint(1, max_unit)
+        graph[DEFAULT_SOURCE][each_agent] = random.randint(3, max_unit)
         # graph[DEFAULT_SOURCE][each_agent] = 1
         number_connect = random.randint(1, object)
         graph[each_agent] = {}
@@ -32,7 +32,27 @@ def auto_generate_graph(agent, object, max_unit):
     graph[DEFAULT_SINK] = {}
     return graph, agentSet, objectSet, m
 
+def re_order_tuple_list(l1, node):
+    try:
+        current = l1[node]
+        init = node + 1
+        pres = l1[:node][:]
+        if node < len(l1) - 1:
+            while (node + 1 < len(l1)) and current[1] > l1[node+1][1]:
+                node += 1
+            pres += l1[init:node+1][:]
+            pres.append(current)
+            pres += l1[node+1:][:]
+        else:
+            pres.append(current)
+        return pres
+    except:
+        print("Wrong Index")
+
+
+
+
 
 if __name__ == "__main__":
-    gen = [('7',5), ('9',4), ('8',4)]
-    print(Sort_Tuple(gen))
+    gen = [('7',3), ('9',4), ('8',10), ('10', 8)]
+    print(re_order_tuple_list(gen, 2))

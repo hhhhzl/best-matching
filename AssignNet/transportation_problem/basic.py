@@ -10,7 +10,11 @@ import time
 from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 import string
 import logging
+import copy
+
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
+
 class Trans_Problem(Graph):
     def __init__(self, graph=None, matrix=None, edges_list=None, directed=None, sink=None, source=None,
                  allow_multitask=True, method='PFF', permutation=True):
@@ -50,13 +54,15 @@ class Trans_Problem(Graph):
                 graph=self.graph, sink=self.sink, Source=self.source)
             if valid:
                 if self.allow_multi:
-                    self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink)
+                    self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink,
+                                                         agentSet=self.agent_set)
                 # add methods
                 if self.method == "PFF":
                     graph = PFF_SOLVER(self.graph, True, self.numb_agent + self.numb_object)
                     if self.permutation:
-                        graph.permutation(graph.graph, self.agent_set, self.object_set, self.sink, self.source)
-                    graph.Fold_fulkerson(self.source, self.sink)
+                        graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set,
+                                          sink=self.sink, source=self.source)
+                    graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set)
                     self.result = graph.graph
                 else:
                     self.result = "Invalid Method."
@@ -76,12 +82,14 @@ class Trans_Problem(Graph):
                     graph=self.graph, sink=self.sink, Source=self.source)
                 if valid:
                     if self.allow_multi:
-                        self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink)
+                        self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink,
+                                                             agentSet=self.agent_set)
                     if self.method == "PFF":
                         graph = PFF_SOLVER(self.graph, True, self.numb_agent + self.numb_object)
                         if self.permutation:
-                            graph.permutation(graph.graph, self.agent_set, self.object_set, self.sink, self.source)
-                        graph.Fold_fulkerson(self.source, self.sink)
+                            graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set,
+                                              sink=self.sink, source=self.source)
+                        graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set)
                         self.result = graph.graph
                     else:
                         self.result = "Invalid Method."
@@ -100,6 +108,7 @@ class Trans_Problem(Graph):
             valid, self.numb_agent, self.agent_set, self.numb_object, self.object_set = self.check_bipartite(
                 graph=graph, sink=self.sink, Source=self.source)
         agentSet_connects = self.check_set_numbers(graph=graph, agentSet=agent_set)
+
         agentSet_matrix = {}
         copy_graph = copy.deepcopy(graph)
         for node in agentSet_connects.keys():
@@ -108,14 +117,25 @@ class Trans_Problem(Graph):
         while copy_graph[source] != {}:
             source_set = copy_graph[source]
             node_list = list(source_set.keys())
+            min_edge = min(list(source_set.values()))
             for node in node_list:
-                if source_set[node] <= agentSet_connects[node]:
-                    agentSet_matrix[node].append(source_set[node])
-                    del copy_graph[source][node]
-                    del copy_graph[node]
-                elif source_set[node] > agentSet_connects[node]:
-                    agentSet_matrix[node].append(agentSet_connects[node])
-                    copy_graph[source][node] -= agentSet_connects[node]
+
+                # initial algorithm
+                # if source_set[node] <= agentSet_connects[node]:
+                #     agentSet_matrix[node].append(source_set[node])
+                #     del copy_graph[source][node]
+                #     del copy_graph[node]
+                # elif source_set[node] > agentSet_connects[node]:
+                #     agentSet_matrix[node].append(agentSet_connects[node])
+                #     copy_graph[source][node] -= agentSet_connects[node]
+
+                # second algorithm for layering
+                if source_set[node] != min_edge:
+                    source_set[node] -= min_edge
+                else:
+                    del source_set[node]
+                agentSet_matrix[node].append(min_edge)
+
         agentSet_matrix, max_len = self.convert_layer_matrix(agentSet_matrix)
         self.layering_graph = self.create_new_layers_graph(graph, source, agentSet_matrix, max_len)
 
@@ -136,25 +156,77 @@ class Trans_Problem(Graph):
                     layering_graph[node]['adj'][source][each_agent] = 1
         return layering_graph
 
-    def PP_FFA(self, expanded_graph):
+    def PP_FFA(self, expanded_graph, objP, objO, distinct=False):
         counter = 0
+        result = {}
         for node in expanded_graph.keys():
             start = time.time()
-            graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False, allow_multitask=True,
-                               sink=self.sink,
-                               source=self.source)
-            graph.execute()
-            logging.info(f"{counter} - {time.time() - start}")
-            counter += 1
-            # graph = test()
-            # graph.test_fun()
-            # pprint.pprint(graph.result)
+            result[node] = {}
+            result[node]['re'] = []
+            result[node]['m'] = expanded_graph[node]['number']
+            if not distinct:
+                graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False, allow_multitask=True,
+                                  sink=self.sink,
+                                  source=self.source,
+                                  objp=objP,
+                                  objo=objO)
+                graph.execute()
+                single_result = graph.result
 
-    def par_PP_FFA(self, i, expanded_graph):
+                # f = open("all_expand_single_result.txt", "w")
+                # for _node in single_result.keys():
+                #     s = str(_node) + ": " + str(single_result[_node])
+                #     f.write(f"{s}\n")
+                # f.close()
+
+                final_result = graph.generate_results(single_result, agentSet=graph.agent_set)
+                logging.info(f"{len(graph.agent_set)} * {len(graph.object_set)} - {counter + 1} - {time.time() - start}")
+                # graph = test()
+                # graph.test_fun()
+                # pprint.pprint(graph.result)
+
+                result[node]['re'] += final_result
+
+            else:
+                pre_graph = copy.deepcopy(expanded_graph[node]['adj'])
+                expanded_graph[node]['re'] = []
+                while expanded_graph[node]['number'] > 0:
+                    graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False,
+                                      allow_multitask=True,
+                                      sink=self.sink,
+                                      source=self.source,
+                                      objp=objP,
+                                      objo=objO)
+                    graph.execute()
+                    single_result = graph.result
+                    final_result = graph.generate_results(single_result, agentSet=graph.agent_set)
+
+                    expanded_graph[node]['re'] += final_result
+                    expanded_graph[node]['adj'] = self.modifiy_distinc(pre_graph, final_result)
+                    pre_graph = copy.deepcopy(expanded_graph[node]['adj'])
+                    expanded_graph[node]['number'] -= 1
+                    logging.info(f"{len(graph.agent_set)} * {len(graph.object_set)} - {self.check_edge_number(expanded_graph[node]['adj'], graph.agent_set)}- {counter + 1} - {time.time() - start}")
+
+                result[node]['m'] = 1
+                result[node]['re'] = expanded_graph[node]['re']
+            counter += 1
+
+
+
+
+
+
+
+        return result
+
+
+    def par_PP_FFA(self, i, expanded_graph, objP, objO):
         start = time.time()
         graph = Bipartite(graph=expanded_graph, directed=True, permutation=False, allow_multitask=True,
                           sink=self.sink,
-                          source=self.source)
+                          source=self.source,
+                          objp=objP,
+                          objo=objO)
         graph.execute()
         # graph = test()
         # graph.test_fun()
@@ -166,27 +238,23 @@ class Trans_Problem(Graph):
 
     def create_new_layers_graph(self, graph, source, number_layer, max_len):
         layer_graph = {}
-        pre = np.zeros(max_len)
-        pre_layer = '1'
         for i in range(1, max_len + 1):
             current = []
             for node in number_layer.keys():
                 current.append(number_layer[node][i - 1])
             current = np.array(current)
-            if np.array_equal(pre, current):
-                layer_graph[pre_layer]['number'] += 1
-            else:
+            non_zero_index = np.nonzero(current)[0]
+            if sum(current) / len(non_zero_index) == current[non_zero_index[0]]:
                 layer_graph[str(i)] = {}
-                layer_graph[str(i)]['number'] = 1
+                layer_graph[str(i)]['number'] = current[non_zero_index[0]]
                 layer_graph[str(i)]['adj'] = copy.deepcopy(graph)
                 for node in number_layer.keys():
                     if number_layer[node][i - 1] != 0:
-                        layer_graph[str(i)]['adj'][source][node] = number_layer[node][i - 1]
+                        layer_graph[str(i)]['adj'][source][node] = 1
                     else:
                         del layer_graph[str(i)]['adj'][source][node]
                         del layer_graph[str(i)]['adj'][node]
-                pre_layer = str(i)
-            pre = current[:]
+
         return layer_graph
 
     def convert_layer_matrix(self, number_layer):
@@ -202,7 +270,7 @@ class Trans_Problem(Graph):
     def init_string_dic(self):
         s = string.printable
         for i in range(len(s) - 1):
-            self.string_dic[s[i]] = s[i+1]
+            self.string_dic[s[i]] = s[i + 1]
         self.string_dic[s[-1]] = s[0]
 
     def check_which_to_use(self):
@@ -230,6 +298,18 @@ class Trans_Problem(Graph):
                     s += self.string_dic[last_use[i]]
             self.used_dic[s] = 1
             return s
+
+    def modifiy_distinc(self, graph, pre_result):
+        for pair in pre_result:
+            if pair[1] in graph[pair[0]]:
+                del graph[pair[0]][pair[1]]
+        return copy.deepcopy(graph)
+
+    def check_edge_number(self, graph, agenset):
+        count = 0
+        for node in agenset:
+            count += len(list(graph[node].keys()))
+        return count
 
 
 if __name__ == "__main__":

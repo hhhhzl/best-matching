@@ -2,7 +2,7 @@ import pprint
 import numpy as np
 import queue
 from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
-
+import math
 
 class Graph:
     def __init__(self):
@@ -178,6 +178,14 @@ class Graph:
         for agent in agentSet:
             agentOrder[agent] = len(list(graph[agent].keys()))
         return agentOrder
+
+    def generate_results(self, graph, agentSet, sink=None, source=None):
+        result = []
+        for node in agentSet:
+            for i in graph[node].keys():
+                if graph[node][i] == 0:
+                    result.append((node, i))
+        return result
 
 
 if __name__ == '__main__':

@@ -4,12 +4,14 @@ import heapq
 import numpy as np
 from AssignNet.general_tools import Graph
 import queue
-from tools import Sort_Tuple
+from tools import Sort_Tuple, re_order_tuple_list
 import copy
+import logging
 
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 class PFF_SOLVER(Graph):
-    def __init__(self, graph=None, directed=None, n=None):
+    def __init__(self, graph=None, directed=None, n=None, objectPrice=None, objectOrder=None):
         super().__init__()
         # residual graph
         self.n = n
@@ -17,15 +19,17 @@ class PFF_SOLVER(Graph):
         self.graph = graph
         self.parents = {}
         self.count = 0
-        self.objectPrice = None
-        self.objectOrder = None
+        self.objectPrice = objectPrice
+        self.objectOrder = objectOrder
         self.orderMax = 0
         self.eps = 0.01
+        self.step = 1
 
-    def permutation(self, graph, agentSet, objectSet, source=None, sink=None):
+    def permutation(self, graph, agentSet, objectSet, source=None, sink=None, permute_agent=False):
         objectPrice = {}
         agentOrder = {}
         objectOrder = {}
+        new_graph = {}
         for agent in agentSet:
             agentOrder[agent] = len(list(graph[agent].keys()))
             for object in graph[agent].keys():
@@ -34,6 +38,18 @@ class PFF_SOLVER(Graph):
                         objectPrice[object] = 1
                     else:
                         objectPrice[object] += 1
+
+        order = {}
+        permute_agent = True
+        if permute_agent:
+            for node in agentOrder.keys():
+                order[node] = (node, agentOrder[node])
+            agent_list = Sort_Tuple(list(order.values()))
+
+            for node in agent_list:
+                new_graph[node[0]] = graph[source][node[0]]
+            graph[source] = new_graph
+
 
         order = {}
         for node in objectPrice.keys():
@@ -55,10 +71,14 @@ class PFF_SOLVER(Graph):
             for node in new_list:
                 new_dic[node[0]] = node[1]
             graph[agent] = new_dic
+
+        for node in objectPrice.keys():
+             objectPrice[node] = 0
+
         self.graph = graph
         self.objectPrice = objectPrice
         self.objectOrder = objectOrder
-        return graph
+        return graph, objectPrice, objectOrder
 
     def permutation_in_PFFA(self, graph, agentSet, current, time, source=None):
         self.objectPrice, self.objectOrder = self.detect_change_order(self.objectPrice, current, time)
@@ -77,13 +97,21 @@ class PFF_SOLVER(Graph):
         return graph
 
     def detect_change_order(self, objectPrice, current, time):
-        objectPrice[current] += 1 + time * self.eps
+        objectPrice[current] += self.step + time * self.eps
         objectOrder = {}
-        order = {}
+        # order = {}
+        switch_order = []
+        node_t = None
+        counter = 0
         for node in objectPrice.keys():
-            order[node] = (node, objectPrice[node])
+            # order[node] = (node, objectPrice[node])
+            switch_order.append((node, objectPrice[node]))
+            if node == current:
+                node_t = counter
+            counter += 1
 
-        order_list = Sort_Tuple(list(order.values()))
+        # order_list = Sort_Tuple(list(order.values()))
+        order_list = re_order_tuple_list(switch_order, node_t)
         for i in range(len(order_list)):
             objectOrder[order_list[i][0]] = i + 1
         return objectPrice, objectOrder
@@ -100,9 +128,11 @@ class PFF_SOLVER(Graph):
         Q.put(s)
         while not (Q.empty()):
             u = Q.get()
+
             if u not in finalized:
                 finalized[u] = True
                 layers[distances[u]].append(u)
+                # logging.info(f'Searching Path for * {u}.')
                 for v in self.graph[u]:
 
                     if self.graph[u][v] > 0 and v not in distances:

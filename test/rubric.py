@@ -25,7 +25,8 @@ def main(args=[]):
     graph = Bipartite(edges_list=G, directed=True, permutation=True, allow_multitask=True)
     graph.execute()
     result = graph.result
-    return result
+    final_result = graph.generate_results(result, agentSet=graph.agent_set)
+    return final_result
 
 
 if __name__ == "__main__":

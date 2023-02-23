@@ -41,40 +41,48 @@ def test_layering_single_thread(generated_graph, agent_set, object_set, number, 
     operate_graph = copy.deepcopy(generated_graph)
     g = PFF_SOLVER()
     start = time.time()
-    operate_graph1 = g.permutation(graph=operate_graph, agentSet=agent_set, objectSet=object_set, source=DEFAULT_SOURCE)
+    operate_graph1, objectPrice, objectOrder = g.permutation(graph=operate_graph, agentSet=agent_set,
+                                                             objectSet=object_set, source=DEFAULT_SOURCE)
     logging.info(f'{number} * {number} - {m} - 排列运算：{"{:.3f}".format(time.time() - start)}s')
+
     new = Trans_Problem(sink=DEFAULT_SINK, source=DEFAULT_SOURCE)
     new.layering(operate_graph1, DEFAULT_SOURCE, agent_set)
     logging.info(f'{number} * {number} - {m} - 分层运算：{"{:.3f}".format(time.time() - start)}s')
+
     graph1 = new.layering_graph
-    G1 = new.expanding(layering_graph=graph1, source=DEFAULT_SOURCE)
-    logging.info(f'层数：- {len(list(G1.keys()))}层')
-    logging.info(f'{number} * {number} - {m} - 展开运算：{"{:.3f}".format(time.time() - start)}s')
-    new.PP_FFA(G1)
-    logging.info(f'{number} * {number} - {m} - 分层展开时间运算：{"{:.3f}".format(time.time() - start)}s')
+    # graph1 = new.expanding(layering_graph=graph1, source=DEFAULT_SOURCE)
+
+    logging.info(f'层数：- {len(list(graph1.keys()))}层')
+    # logging.info(f'{number} * {number} - {m} - 展开运算：{"{:.3f}".format(time.time() - start)}s')
+    result = new.PP_FFA(graph1, objectPrice, objectOrder, distinct=False)
+    logging.info(f'{number} * {number} - {m} - 分层展开单进程时间运算：{"{:.3f}".format(time.time() - start)}s')
+
+    return result
 
 
 def test_layering_multi_thread(generated_graph, agent_set, object_set, number, m):
     operate_graph = copy.deepcopy(generated_graph)
     g = PFF_SOLVER()
     start = time.time()
-    operate_graph1 = g.permutation(graph=operate_graph, agentSet=agent_set, objectSet=object_set, source=DEFAULT_SOURCE)
+    operate_graph1, objectPrice, objectOrder = g.permutation(graph=operate_graph, agentSet=agent_set,
+                                                             objectSet=object_set, source=DEFAULT_SOURCE)
     logging.info(f'{number} * {number} - {m} - 排列运算：{"{:.3f}".format(time.time() - start)}s')
 
     new = Trans_Problem()
     new.layering(operate_graph1, DEFAULT_SOURCE, agent_set)
     logging.info(f'{number} * {number} - {m}- 分层运算：{"{:.3f}".format(time.time() - start)}s')
     graph1 = new.layering_graph
-    G1 = new.expanding(layering_graph=graph1, source=DEFAULT_SOURCE)
-    logging.info(f'{number} * {number} - {m} - 展开运算：{"{:.3f}".format(time.time() - start)}s')
+
+    # graph1 = new.expanding(layering_graph=graph1, source=DEFAULT_SOURCE)
+    # logging.info(f'{number} * {number} - {m} - 展开运算：{"{:.3f}".format(time.time() - start)}s')
     #
-    graphs = [copy.deepcopy(G1[node]['adj']) for node in list(G1.keys())]
+    graphs = [copy.deepcopy(graph1[node]['adj']) for node in list(graph1.keys())]
     logging.info(f'层数：- {len(graphs)}层')
-    par(new, graphs)
+    par(new, graphs, objectPrice, objectOrder)
     logging.info(f'{number} * {number} - 分层展开时间多进程运算：{"{:.3f}".format(time.time() - start)}s')
 
 
-def par(Class, graphs):
+def par(Class, graphs, objP, objO):
     # loop = asyncio.get_running_loop()
     # lstFutures = []
     # # Create an executor with a maximum of eight workers
@@ -98,18 +106,19 @@ def par(Class, graphs):
     pool = Pool(processes=multiprocessing.cpu_count())
     result = []
     for i in range(n):
-        result.append(pool.apply_async(func=Class.par_PP_FFA, args=(i, graphs[i], )))
+        result.append(pool.apply_async(func=Class.par_PP_FFA, args=(i, graphs[i], objP, objO)))
     pool.close()
     pool.join()
     ans = [res.get() for res in result]
 
+
 def main():
-    for (item, number) in enumerate([10, 100, 200, 300]):
+    for (item, number) in enumerate([10, 50, 100, 200, 300, 400, 500]):
         logging.info(f'TP测试{item + 1}开始')
-        generated_graph, agent_set, object_set, m = data_generate(number, 50)
+        generated_graph, agent_set, object_set, m = data_generate(number, 400)
         # test_all_expand(generated_graph, number, m)
         test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
-        test_layering_multi_thread(generated_graph, agent_set, object_set,  number, m)
+        # test_layering_multi_thread(generated_graph, agent_set, object_set, number, m)
         logging.info(f'TP测试{item + 1}结束')
 
 
@@ -117,4 +126,3 @@ if __name__ == "__main__":
     logging.info(f'TP测试开始')
     main()
     logging.info(f'TP测试结束')
-
