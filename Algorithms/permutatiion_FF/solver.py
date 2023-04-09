@@ -10,6 +10,7 @@ import logging
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
+
 class PFF_SOLVER(Graph):
     def __init__(self, graph=None, directed=None, n=None, objectPrice=None, objectOrder=None):
         super().__init__()
@@ -50,7 +51,6 @@ class PFF_SOLVER(Graph):
                 new_graph[node[0]] = graph[source][node[0]]
             graph[source] = new_graph
 
-
         order = {}
         for node in objectPrice.keys():
             order[node] = (node, objectPrice[node])
@@ -72,8 +72,8 @@ class PFF_SOLVER(Graph):
                 new_dic[node[0]] = node[1]
             graph[agent] = new_dic
 
-        for node in objectPrice.keys():
-             objectPrice[node] = 0
+        # for node in objectPrice.keys():
+        #     objectPrice[node] = 0
 
         self.graph = graph
         self.objectPrice = objectPrice
@@ -146,7 +146,7 @@ class PFF_SOLVER(Graph):
                             Q.put(v)
         return False
 
-    def Fold_fulkerson(self, s, t, agentSet):
+    def Fold_fulkerson(self, s, t, agentSet, permutation):
         # This array is filled by BFS and to store path
         max_flow = 0  # There is no flow initially
         # Augment the flow while there is path from source to sink
@@ -172,6 +172,7 @@ class PFF_SOLVER(Graph):
 
             while v != s:
                 u = self.parents[v]
+
                 if counter == 0:
                     current_node = u
                 self.graph[u][v] -= path_flow
@@ -184,6 +185,9 @@ class PFF_SOLVER(Graph):
                     self.graph[v][u] += path_flow
                     v = self.parents[v]
                 counter += 1
-            self.graph = self.permutation_in_PFFA(graph=self.graph, source=s, agentSet=agentSet, current=current_node, time=request)
+
+            if permutation:
+                self.graph = self.permutation_in_PFFA(graph=self.graph, source=s, agentSet=agentSet, current=current_node,
+                                                  time=request)
             request += 1
         return max_flow

@@ -6,12 +6,14 @@ from configs.AssignNet_config import DEFAULT_SOURCE, DEFAULT_SINK
 from AssignNet.general_tools import Graph
 from Algorithms.permutatiion_FF.solver import PFF_SOLVER
 
+
 class test():
     def __init__(self):
         pass
 
     def test_fun(self):
         time.sleep(5)
+
 
 class Bipartite(Graph):
     def __init__(self, graph=None, matrix=None, edges_list=None, directed=None, sink=None, source=None,
@@ -50,13 +52,17 @@ class Bipartite(Graph):
                 graph=self.graph, sink=self.sink, Source=self.source)
             if valid:
                 if self.allow_multi:
-                    self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink, agentSet=self.agent_set)
+                    self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink,
+                                                         agentSet=self.agent_set)
+
                 # add methods
                 if self.method == "PFF":
-                    graph = PFF_SOLVER(self.graph, True, self.numb_agent+self.numb_object, self.objectOrder, self.objectOrder)
+                    graph = PFF_SOLVER(self.graph, True, self.numb_agent + self.numb_object, self.objectOrder,
+                                       self.objectOrder)
                     if self.permutation:
-                        graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set, sink=self.sink, source=self.source)
-                    graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set)
+                        graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set,
+                                          sink=self.sink, source=self.source)
+                    graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set, permutation=self.permutation)
                     self.result = graph.graph
                 else:
                     self.result = "Invalid Method."
@@ -68,20 +74,27 @@ class Bipartite(Graph):
 
         else:
             if self.directed:
-                self.agent_set = self.directed_check_agentSet(self.graph)
-                self.graph = self.add_sink_source_layer(graph=self.graph, agentSet=self.agent_set)  # add layer
                 self.source = DEFAULT_SOURCE
                 self.sink = DEFAULT_SINK
+                self.agent_set, self.object_set = self.directed_check_Set(self.graph)
+                self.graph = self.add_sink_source_layer(graph=self.graph, agentSet=self.agent_set,
+                                                        objectSet=self.object_set)  # add layer
+
                 valid, self.numb_agent, self.agent_set, self.numb_object, self.object_set = self.check_bipartite(
                     graph=self.graph, sink=self.sink, Source=self.source)
+
                 if valid:
                     if self.allow_multi:
-                        self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink, agentSet=self.agent_set)
+                        self.graph = self.allow_multi_assign(self.graph, objectSet=self.object_set, sink=self.sink,
+                                                             agentSet=self.agent_set)
+
                     if self.method == "PFF":
-                        graph = PFF_SOLVER(self.graph, True, self.numb_agent+self.numb_object, self.objectOrder, self.objectOrder)
+                        graph = PFF_SOLVER(self.graph, True, self.numb_agent + self.numb_object, self.objectOrder,
+                                           self.objectOrder)
                         if self.permutation:
-                            graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set, sink=self.sink, source=self.source)
-                        graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set)
+                            graph.permutation(graph=graph.graph, agentSet=self.agent_set, objectSet=self.object_set,
+                                              sink=self.sink, source=self.source)
+                        graph.Fold_fulkerson(self.source, self.sink, agentSet=self.agent_set, permutation=self.permutation)
                         self.result = graph.graph
                     else:
                         self.result = "Invalid Method."
