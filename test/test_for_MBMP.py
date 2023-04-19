@@ -13,7 +13,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 
 def data_generate(number):
-    agent_number = random.randint(number // 5 * 3, number)
+    agent_number = random.randint(number // 5 * 3, number-1)
     object_number = number - agent_number
     generated_graph, agent_set, object_set, m = auto_generate_graph_one(agent_number, object_number)
     return generated_graph, agent_set, object_set, m, agent_number, object_number
@@ -76,12 +76,12 @@ def test_FFA(graph, agent_set, object_set, number, m, agent_number, object_numbe
 
 
 def main():
-    for (item, number) in enumerate([50, 100, 200, 500, 1000]):
+    for (item, number) in enumerate([5000, 5000]):
         ffa_mean = []
         pffa_mean = []
         ffa_std = []
         pffa_std = []
-        for i in range(10):
+        for i in range(5):
             logging.info(f'TP测试{number} - {i + 1}开始')
             generated_graph, agent_set, object_set, m, agent_number, object_number = data_generate(number)
             result, mean, std = test_FFA(generated_graph, agent_set, object_set, number, m, agent_number, object_number)

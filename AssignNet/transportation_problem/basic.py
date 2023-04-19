@@ -74,8 +74,9 @@ class Trans_Problem(Graph):
 
         else:
             if self.directed:
-                self.agent_set = self.directed_check_agentSet(self.graph)
-                self.graph = add_sink_source_layer(graph=self.graph, agentSet=self.agent_set)  # add layer
+                self.agent_set, self.object_set = self.directed_check_Set(self.graph)
+                self.graph = self.add_sink_source_layer(graph=self.graph, agentSet=self.agent_set,
+                                                        objectSet=self.object_set)
                 self.source = DEFAULT_SOURCE
                 self.sink = DEFAULT_SINK
                 valid, self.numb_agent, self.agent_set, self.numb_object, self.object_set = self.check_bipartite(
@@ -210,13 +211,6 @@ class Trans_Problem(Graph):
                 result[node]['m'] = 1
                 result[node]['re'] = expanded_graph[node]['re']
             counter += 1
-
-
-
-
-
-
-
         return result
 
 

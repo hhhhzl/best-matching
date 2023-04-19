@@ -48,18 +48,19 @@ def main(args=[]):
     # s = '0'
     # t = '7'  # Read the source from disk
 
-    graph = Bipartite(edges_list=G, directed=True, permutation=False, allow_multitask=False)
+    graph = Bipartite(edges_list=G, directed=True, permutation=False, allow_multitask=True)
     graph.execute()
     result = graph.result
     final_result = graph.generate_results(result, agentSet=graph.agent_set)
     pprint.pprint(final_result)
     percent_cal(graph.agent_set, graph.object_set, final_result, "FFA")
 
-    # graph = Bipartite(edges_list=G, directed=True, permutation=True, allow_multitask=False)
-    # graph.execute()
-    # result = graph.result
-    # final_result = graph.generate_results(result, agentSet=graph.agent_set)
-    # percent_cal(graph.agent_set, graph.object_set, final_result, "PFFA")
+    graph = Bipartite(edges_list=G, directed=True, permutation=True, allow_multitask=True)
+    graph.execute()
+    result = graph.result
+    final_result = graph.generate_results(result, agentSet=graph.agent_set)
+    pprint.pprint(final_result)
+    percent_cal(graph.agent_set, graph.object_set, final_result, "PFFA")
     return final_result
 
 

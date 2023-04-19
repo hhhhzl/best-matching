@@ -25,15 +25,22 @@ def data_generate(number, max):
     return generated_graph, agent_set, object_set, m
 
 
-def test_all_expand(generated_graph, number, m):
+def test_all_expand(generated_graph, agent_set, object_set, number, m):
     operate_graph = copy.deepcopy(generated_graph)
     graph = copy.deepcopy({'1': {}})
     graph['1']['adj'] = operate_graph
+
+    g = PFF_SOLVER()
     start = time.time()
-    run = Trans_Problem()
+    operate_graph1, objectPrice, objectOrder = g.permutation(graph=operate_graph, agentSet=agent_set,
+                                                             objectSet=object_set, source=DEFAULT_SOURCE)
+    logging.info(f'{number} * {number} - {m} - 排列运算：{"{:.3f}".format(time.time() - start)}s')
+    start = time.time()
+    run = Trans_Problem(sink=DEFAULT_SINK, source=DEFAULT_SOURCE)
     G = run.expanding(layering_graph=graph, source=DEFAULT_SOURCE)
     logging.info(f'层数：- {len(list(G.keys()))}层')
-    run.PP_FFA(copy.deepcopy(G))
+    G['1']['number'] = 1
+    run.PP_FFA(G, objectPrice, objectOrder)
     logging.info(f'{number} * {number}- {m} - 全部展开时间运算：{"{:.3f}".format(time.time() - start)}s')
 
 
@@ -113,11 +120,11 @@ def par(Class, graphs, objP, objO):
 
 
 def main():
-    for (item, number) in enumerate([10, 50, 100, 200, 300, 400, 500]):
+    for (item, number) in enumerate([500, 1000, 2500]):
         logging.info(f'TP测试{item + 1}开始')
-        generated_graph, agent_set, object_set, m = data_generate(number, 400)
-        # test_all_expand(generated_graph, number, m)
-        test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
+        generated_graph, agent_set, object_set, m = data_generate(number, 10)
+        test_all_expand(generated_graph, agent_set, object_set, number, m)
+        # test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
         # test_layering_multi_thread(generated_graph, agent_set, object_set, number, m)
         logging.info(f'TP测试{item + 1}结束')
 

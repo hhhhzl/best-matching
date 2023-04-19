@@ -8,6 +8,7 @@ import math
 import numba
 import sys
 
+
 def adj_to_matrix(graph, weighted, agent_set, object_set):
     number = len(graph.keys())
     adj_matrix = np.zeros((number, number))

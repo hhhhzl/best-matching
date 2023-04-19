@@ -23,10 +23,10 @@ class PFF_SOLVER(Graph):
         self.objectPrice = objectPrice
         self.objectOrder = objectOrder
         self.orderMax = 0
-        self.eps = 0.01
+        self.eps = 0.1
         self.step = 1
 
-    def permutation(self, graph, agentSet, objectSet, source=None, sink=None, permute_agent=False):
+    def permutation(self, graph, agentSet, objectSet, source=None, sink=None, permute_agent=True):
         objectPrice = {}
         agentOrder = {}
         objectOrder = {}
@@ -41,7 +41,7 @@ class PFF_SOLVER(Graph):
                         objectPrice[object] += 1
 
         order = {}
-        permute_agent = True
+        # permute_agent = True
         if permute_agent:
             for node in agentOrder.keys():
                 order[node] = (node, agentOrder[node])
@@ -74,36 +74,32 @@ class PFF_SOLVER(Graph):
 
         # for node in objectPrice.keys():
         #     objectPrice[node] = 0
-
         self.graph = graph
         self.objectPrice = objectPrice
         self.objectOrder = objectOrder
         return graph, objectPrice, objectOrder
 
     def permutation_in_PFFA(self, graph, agentSet, current, time, source=None):
-        self.objectPrice, self.objectOrder = self.detect_change_order(self.objectPrice, current, time)
+        self.objectPrice, self.objectOrder = self.detect_change_order(self.objectPrice, self.objectOrder, current, time)
         for agent in agentSet:
-            for object in graph[agent].keys():
-                if object == source:
-                    graph[agent][object] = (object, graph[agent][object], 0)
-                else:
-                    graph[agent][object] = (object, graph[agent][object], self.objectOrder[object])
-            new_dic = graph[agent]
-            new_list = Sort_Tuple(list(new_dic.values()))
             new_dic = {}
-            for node in new_list:
-                new_dic[node[0]] = node[1]
-            graph[agent] = new_dic
+            if current in graph[agent]:
+                for object in self.objectOrder.keys():
+                    if source in graph[agent]:
+                        new_dic[source] = graph[agent][source]
+                    if object in graph[agent]:
+                        new_dic[object] = graph[agent][object]
+                graph[agent] = new_dic
         return graph
 
-    def detect_change_order(self, objectPrice, current, time):
-        objectPrice[current] += self.step + time * self.eps
+    def detect_change_order(self, objectPrice, oldOrder, current, time):
+        objectPrice[current] += self.step + self.eps
         objectOrder = {}
         # order = {}
         switch_order = []
         node_t = None
         counter = 0
-        for node in objectPrice.keys():
+        for node in oldOrder.keys():
             # order[node] = (node, objectPrice[node])
             switch_order.append((node, objectPrice[node]))
             if node == current:
@@ -187,7 +183,6 @@ class PFF_SOLVER(Graph):
                 counter += 1
 
             if permutation:
-                self.graph = self.permutation_in_PFFA(graph=self.graph, source=s, agentSet=agentSet, current=current_node,
-                                                  time=request)
+                self.graph = self.permutation_in_PFFA(graph=self.graph, source=s, agentSet=agentSet, current=current_node, time=request)
             request += 1
         return max_flow

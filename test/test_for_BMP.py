@@ -65,8 +65,8 @@ def test_FFA(graph, agent_set, object_set, number, m):
 
 
 def main():
-    for (item, number) in enumerate([5]):
-        for i in range(10):
+    for (item, number) in enumerate([2500]):
+        for i in range(5):
             logging.info(f'TP测试{number} - {i + 1}开始')
             generated_graph, agent_set, object_set, m = data_generate(number)
             result = test_FFA(generated_graph, agent_set, object_set, number, m)
