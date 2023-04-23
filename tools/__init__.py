@@ -63,7 +63,8 @@ def auto_generate_graph(agent, object, max_unit):
     for each_agent in agentSet:
         graph[DEFAULT_SOURCE][each_agent] = random.randint(3, max_unit)
         # graph[DEFAULT_SOURCE][each_agent] = 1
-        number_connect = random.randint(1, object)
+        number_threshold = random.randint(1, object)
+        number_connect = random.randint(1, number_threshold)
         graph[each_agent] = {}
         while number_connect >= 0:
             x = random.randint(agent + 1, agent + object)

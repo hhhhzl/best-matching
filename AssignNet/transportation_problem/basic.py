@@ -39,6 +39,7 @@ class Trans_Problem(Graph):
         self.layering_graph = None
         self.string_dic = {}
         self.used_dic = {}
+        self.stringtable = ''
 
     def execute(self):
         if self.graph and self.matrix is None and self.edges_list is None:
@@ -155,6 +156,7 @@ class Trans_Problem(Graph):
                             layering_graph[node]['adj'][each_agent])
                         counter -= 1
                     layering_graph[node]['adj'][source][each_agent] = 1
+
         return layering_graph
 
     def PP_FFA(self, expanded_graph, objP, objO, distinct=False):
@@ -166,7 +168,8 @@ class Trans_Problem(Graph):
             result[node]['re'] = []
             result[node]['m'] = expanded_graph[node]['number']
             if not distinct:
-                graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False, allow_multitask=True,
+                graph = Bipartite(graph=expanded_graph[node]['adj'], directed=True, permutation=False,
+                                  allow_multitask=True,
                                   sink=self.sink,
                                   source=self.source,
                                   objp=objP,
@@ -181,12 +184,15 @@ class Trans_Problem(Graph):
                 # f.close()
 
                 final_result = graph.generate_results(single_result, agentSet=graph.agent_set)
-                logging.info(f"{len(graph.agent_set)} * {len(graph.object_set)} - {counter + 1} - {time.time() - start}")
+                logging.info(
+                    f"{len(graph.agent_set)} * {len(graph.object_set)} - {counter + 1} - {time.time() - start}")
                 # graph = test()
                 # graph.test_fun()
                 # pprint.pprint(graph.result)
-
-                result[node]['re'] += final_result
+                final = []
+                for i in range(result[node]['m']):
+                    final += final_result
+                result[node]['re'] += final
 
             else:
                 pre_graph = copy.deepcopy(expanded_graph[node]['adj'])
@@ -206,15 +212,15 @@ class Trans_Problem(Graph):
                     expanded_graph[node]['adj'] = self.modifiy_distinc(pre_graph, final_result)
                     pre_graph = copy.deepcopy(expanded_graph[node]['adj'])
                     expanded_graph[node]['number'] -= 1
-                    logging.info(f"{len(graph.agent_set)} * {len(graph.object_set)} - {self.check_edge_number(expanded_graph[node]['adj'], graph.agent_set)}- {counter + 1} - {time.time() - start}")
+                    logging.info(
+                        f"{len(graph.agent_set)} * {len(graph.object_set)} - {self.check_edge_number(expanded_graph[node]['adj'], graph.agent_set)}- {counter + 1} - {time.time() - start}")
 
                 result[node]['m'] = 1
                 result[node]['re'] = expanded_graph[node]['re']
             counter += 1
         return result
 
-
-    def par_PP_FFA(self, i, expanded_graph, objP, objO):
+    def par_PP_FFA(self, i, expanded_graph, objP, objO, number):
         start = time.time()
         graph = Bipartite(graph=expanded_graph, directed=True, permutation=False, allow_multitask=True,
                           sink=self.sink,
@@ -224,8 +230,13 @@ class Trans_Problem(Graph):
         graph.execute()
         # graph = test()
         # graph.test_fun()
-        logging.info(f"{i} - {time.time() - start}")
-        return graph.result
+        logging.info(f"Threads: {i+1} - {time.time() - start}")
+        single_result = graph.result
+        final_result = graph.generate_results(single_result, agentSet=graph.agent_set)
+        final = []
+        for i in range(number):
+            final += final_result
+        return final
 
     def merge(self):
         pass
@@ -263,14 +274,20 @@ class Trans_Problem(Graph):
 
     def init_string_dic(self):
         s = string.printable
+        s_clean = ''
         for i in range(len(s) - 1):
-            self.string_dic[s[i]] = s[i + 1]
-        self.string_dic[s[-1]] = s[0]
+            if not s[i].isdigit() and s[i] != '0' and s[i] != ' ':
+                s_clean += s[i]
+
+        for i in range(len(s_clean) - 1):
+            self.string_dic[s_clean[i]] = s_clean[i + 1]
+        self.string_dic[s_clean[-1]] = s_clean[0]
+        self.stringtable = s_clean
 
     def check_which_to_use(self):
-        l = string.printable[-1]
+        l = self.stringtable[-1]
         if self.used_dic == {}:
-            s = string.printable[0]
+            s = self.stringtable[0]
             self.used_dic[s] = 1
             return s
         last_use = list(self.used_dic.keys())[-1]
@@ -279,7 +296,7 @@ class Trans_Problem(Graph):
             if last_use[i] == l:
                 counter += 1
         if counter == len(last_use):
-            s = string.printable[0] * (len(last_use) + 1)
+            s = self.stringtable[0] * (len(last_use) + 1)
             self.used_dic[s] = 1
             return s
         else:
