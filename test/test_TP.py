@@ -167,13 +167,13 @@ def par(Class, graphs, objP, objO):
 
 
 def main():
-    for (item, number) in enumerate([500]):
+    for (item, number) in enumerate([2500]):
         for i in range(1):
             logging.info(f'TP测试{item + 1}开始')
-            generated_graph, agent_set, object_set, m = data_generate(number, 400)
-            # test_all_expand(generated_graph, agent_set, object_set, number, m)
+            generated_graph, agent_set, object_set, m = data_generate(number, 10)
+            test_all_expand(generated_graph, agent_set, object_set, number, m)
             # test_layering_single_thread(generated_graph, agent_set, object_set, number, m)
-            test_layering_multi_thread(generated_graph, agent_set, object_set, number, m)
+            # test_layering_multi_thread(generated_graph, agent_set, object_set, number, m)
             logging.info(f'TP测试{item + 1}结束')
 
 
